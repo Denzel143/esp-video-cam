@@ -525,10 +525,10 @@
                 if (fileData.status === 'remote') {
                     btnHtml = `<button class="btn-small btn-download" onclick="startDownload('${filename}')">⬇️ Unduh ke Browser</button>`;
                 } else if (fileData.status === 'downloaded') {
-                    // Tombol ini sekarang memanggil exportToWebM (buka modal password), bukan render langsung
                     btnHtml = `
                         <button class="btn-small btn-play" onclick="loadToPlayer('${filename}')">▶ Putar Video</button>
                         <button class="btn-small btn-export" onclick="exportToWebM('${filename}')" id="btn-export-${filename}">💾 Save to PC (.webm)</button>
+                        <button class="btn-small" style="background: #64748b; color: white;" onclick="downloadRawEVID('${filename}')">📦 Save Raw (.evid)</button>
                     `;
                 } else if (fileData.status === 'downloading') {
                     btnHtml = `<button class="btn-small btn-disabled">Harap Tunggu...</button>`;
@@ -560,6 +560,7 @@
 
         async function processEVID(blob, filename) {
             dvrFiles[filename].status = 'extracting';
+            dvrFiles[filename].rawBlob = blob; // <--- Simpan versi mentahnya di sini
             renderGrid();
 
             const arrayBuffer = await blob.arrayBuffer();
@@ -746,6 +747,30 @@
                 btn.innerText = `⏳ Merender ${progress}%`;
             }
             recorder.stop();
+        };
+        
+        // ==========================================
+        // FUNGSI DOWNLOAD RAW EVID (TANPA PASSWORD)
+        // ==========================================
+        window.downloadRawEVID = function(filename) {
+            const fileData = dvrFiles[filename];
+            
+            if (!fileData || !fileData.rawBlob) {
+                return alert("File mentah tidak ditemukan!");
+            }
+            
+            // Langsung berikan file mentahnya tanpa verifikasi password
+            const url = URL.createObjectURL(fileData.rawBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename; // File akan berakhiran .evid
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Bersihkan memori cache URL setelah beberapa detik
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
         };
 
     </script>
